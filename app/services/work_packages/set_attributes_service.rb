@@ -51,9 +51,9 @@ class WorkPackages::SetAttributesService
   private
 
   def validate_and_result
-    boolean, errors = validate(work_package)
+    success, errors = validate(work_package)
 
-    ServiceResult.new(success: boolean,
+    ServiceResult.new(success: success,
                       errors: errors,
                       result: work_package)
   end
@@ -62,14 +62,22 @@ class WorkPackages::SetAttributesService
     if attributes.key?(:attachment_ids)
       work_package.attachments_replacements = Attachment.where(id: attributes[:attachment_ids])
     end
-    work_package.attributes = attributes.except(:attachment_ids)
 
+    set_assignable_attributes(attributes)
     set_default_attributes
     unify_dates
     update_project_dependent_attributes
     update_dates
     reset_custom_values
     reassign_invalid_status_if_type_changed
+  end
+
+  def set_assignable_attributes(attributes)
+    assignable_attributes = attributes.except(:attachment_ids).select do |key, _|
+      work_package.respond_to?(key)
+    end
+
+    work_package.attributes = assignable_attributes
   end
 
   def set_default_attributes
