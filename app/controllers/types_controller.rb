@@ -89,6 +89,7 @@ class TypesController < ApplicationController
       end
 
       call.on_failure do
+        @tab = params[:tab]
         @projects = Project.all
         render action: 'edit'
       end
